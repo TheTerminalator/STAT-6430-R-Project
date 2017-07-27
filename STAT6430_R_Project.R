@@ -145,4 +145,4 @@ nrow(movie_genres_merged[movie_genres_merged$CountOfGenres >= 2,])/nrow(movie_ge
 #ANSWER 69.9938% of all reviews involved at least two genres
 
 #----------------------------------------Problem 7----------------------------------------------------
-
+#start
