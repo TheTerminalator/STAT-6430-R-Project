@@ -128,7 +128,9 @@ genres_only_df_adjusted <- sort(genres_only_df_adjusted)
 #Genre that occured LEAST = Documentary
 
 
-#-----------------------------------------Problem 6--------------------------------------------------
+#-----------------------------------------------------------------------------------------
+
+# Problem 6
 
 #adding new column that identifies number of genres for each movie
 movie_genres_merged$CountOfGenres <- rowSums(movie_genres_merged[10:28])
@@ -145,7 +147,7 @@ nrow(movie_genres_merged)
 #percentage of reviews that invovled movies classified in at least two genres 
 nrow(movie_genres_merged[movie_genres_merged$CountOfGenres >= 2,])/nrow(movie_genres_merged)
 #0.69938
-#ANSWER 69.9938% of all reviews involved at least two genres
+#ANSWER 69.938% of all reviews involved at least two genres
 
 #------------------------------------------------------------------------------------------
 
@@ -235,8 +237,11 @@ mvreviews_pctg
 # Create a dataframe to store all genres and their corresponding average ratings
 genre_rating_df <- as_data_frame(matrix(NA, nrow = 19, ncol = 2))
 for (i in 10:28){
+  # Split the dataframe based on if the reviewed movie is in the genre
   genre_rating <- split(movie_genres_merged, movie_genres_merged[[i]])
+  # Find the rating for each review
   genremean_rating <- mean(genre_rating$`1`$Rating)
+  # Put the genres and their average ratings into another dataframe
   genre_rating_df[i-9, 1] <- colnames(movie_genres_merged)[i]
   genre_rating_df[i-9, 2] <- genremean_rating
 }
@@ -256,7 +261,6 @@ lowest_rating_genre
 
 # Merge moviereviews, genres and reviewers together
 movie_genres_age <- merge(movie_genres_merged, reviewers_df, by = "ReviewerID")
-movie_genres_age
 
 # Divide the dataframe into two parts based on age
 is_under_30 <- subset(movie_genres_age, movie_genres_age$Age <= 30)
@@ -295,32 +299,28 @@ lowest_rating_genre_a30
 #         unknown
 
 #-----------------------------------------------------------------------------------
+# 1. What seems to be associated with a high rating?
+
 # Analysis of average ratings by year of movie release
 
 # Read input files - reviews.txt, reviewers.txt and genres.txt
-moviereviews_df <-read.csv(text=getURL("https://raw.githubusercontent.com/rohanbapat/STAT-6430-R-Project/master/reviews.txt"), header=F, sep ="\t")
-colnames(reviews_df) <- c('ReviewerID','MovieID','Rating','TimeStampUTC')
+moviereviews_df <-read.csv('reviews.txt', header=F, sep ="\t")
+colnames(moviereviews_df) <- c('ReviewerID','MovieID','Rating','TimeStampUTC')
 
-genres_df <-read.csv(text=getURL("https://raw.githubusercontent.com/rohanbapat/STAT-6430-R-Project/master/genres.txt"), header=F, sep ="|")
+genres_df <-read.csv('genres.txt', header=F, sep ="|")
 colnames(genres_df) <- c('MovieID', 'movie title', 'release date', 'video release date ', 'IMDb URL',
                          'unknown', 'Action', 'Adventure', 'Animation ', 'Childrens', 'Comedy', 'Crime',
                          'Documentary', 'Drama', 'Fantasy ', 'Film-Noir', 'Horror', 'Musical', 'Mystery',
                          'Romance', 'Sci-Fi ', 'Thriller', 'War', 'Western ')
 
-reviewers_df <- read.csv(text = getURL("https://raw.githubusercontent.com/rohanbapat/STAT-6430-R-Project/master/reviewers.txt"), header = F, sep = "|")
+reviewers_df <- read.csv('reviewers.txt', header = F, sep = "|")
 colnames(reviewers_df) <- c('ReviewerID', 'Age', 'Gender', 'Occupation', 'Zipcode')
 
 # Merge reviewers and reviews
-reviewer_merged_df <- merge(x = reviews_df, y = reviewers_df, by = 'ReviewerID', all.x = T)
+reviewer_merged_df <- merge(x = moviereviews_df, y = reviewers_df, by = 'ReviewerID', all.x = T)
 
 # Merge with genres
 genres_merged_df <- merge(x = reviewer_merged_df, y = genres_df, by = 'MovieID', all.x = T)
-
-# Convert movie title to character
-genres_merged_df$`movie title` <- as.character(genres_merged_df$`movie title`)
-
-# Remove year from movie title
-genres_merged_df$`movie title` <- sapply(genres_merged_df$`movie title`, function (x) substr(x,1,nchar(x)-7))
 
 # Import lubridate to parse dates
 library(lubridate)
@@ -348,6 +348,7 @@ p_decade_rtng <- ggplot(rating_by_decade, aes(x = release_decade, y = meanRating
   labs(title = "Fall in average movie rating by release year", x = "Time of release", y = "Average rating") + 
   geom_text(aes(label=meanRating), vjust=-0.2)
 p_decade_rtng
+
 #-----------------------------------------------------------------------------------------
 
 # 2. What groups are most likely to provide higher ratings?
@@ -360,10 +361,6 @@ cor(reviews_reviewers$Age, reviews_reviewers$Rating)
 is_under_25 <- subset(movie_genres_age, movie_genres_age$Age <= 25)
 is_25_to_40 <- subset(movie_genres_age, (movie_genres_age$Age > 25) & (movie_genres_age$Age <= 40))
 above_40 <- subset(movie_genres_age, movie_genres_age$Age > 40)
-
-length(is_under_25$ReviewerID)
-length(is_25_to_40$ReviewerID)
-length(above_40$ReviewerID)
 
 movie_genres_age%>%group_by()
 
@@ -397,7 +394,7 @@ for (i in 11:28){
 }
 genre_rating_a40_df <- genre_rating_a40_df[order(genre_rating_a40_df$V2),]
 
-# Plot
+# Plot the average rating of each genre based on age groups
 genre_rating_age <- merge(genre_rating_u20_df, genre_rating_20_40_df, by = 'V1')
 genre_rating_age <- merge(genre_rating_age, genre_rating_a40_df, by = 'V1')
 
@@ -407,6 +404,7 @@ plot1 <- ggplot(data = genre_rating_age, aes(x = genre_rating_age$V1)) +
   geom_line(aes(y = genre_rating_age$V2.y), group = 1, colour = 'blue') + 
   geom_line(aes(y = genre_rating_age$V2), group = 1, colour = 'green')
 
+# Change the x, y labels and add annotations to specific points
 plot1 <- plot1 + ylab('Average Rating') + xlab('Genre')
 plot1 <- plot1 + annotate("text", x = 4.1, y = 3.18, label = "Adults don't rate Horror movies\n as high as under 25", size = 6)
 plot1 <- plot1 + annotate("text", x = 8.5, y = 3.85, label = "40 and above rate Western and Mystery higher", size = 6)
@@ -443,7 +441,7 @@ for (i in 11:28){
 }
 genre_rating_f_df <- genre_rating_f_df[order(genre_rating_f_df$V2),]
 
-# Plot
+# Plot the average rating of each genre based on gender
 genre_rating_gender <- merge(genre_rating_f_df, genre_rating_m_df, by = 'V1')
 genre_rating_gender <- genre_rating_gender[order(genre_rating_gender$V2.x),]
 
