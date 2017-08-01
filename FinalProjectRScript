@@ -293,3 +293,113 @@ highest_rating_genre_a30
 lowest_rating_genre_a30
 # Answer: FilmNoir
 #         unknown
+
+#-----------------------------------------------------------------------------------------
+
+# 2. What groups are most likely to provide higher ratings?
+
+# Correlation between Age and Rating
+cor(reviews_reviewers$Age, reviews_reviewers$Rating)
+# coefficient is 0.0544604, no correlation
+
+# Divide the dataframe based on age
+is_under_25 <- subset(movie_genres_age, movie_genres_age$Age <= 25)
+is_25_to_40 <- subset(movie_genres_age, (movie_genres_age$Age > 25) & (movie_genres_age$Age <= 40))
+above_40 <- subset(movie_genres_age, movie_genres_age$Age > 40)
+
+length(is_under_25$ReviewerID)
+length(is_25_to_40$ReviewerID)
+length(above_40$ReviewerID)
+
+movie_genres_age%>%group_by()
+
+# For reviewers age 20 and under
+genre_rating_u25_df <- as_data_frame(matrix(NA, nrow = 18, ncol = 2))
+for (i in 11:28){
+  genre_rating_u25 <- split(is_under_25, is_under_25[[i]])
+  genremean_rating_u25 <- mean(genre_rating_u25$`1`$Rating)
+  genre_rating_u20_df[i-10, 1] <- colnames(is_under_25)[i]
+  genre_rating_u20_df[i-10, 2] <- genremean_rating_u25
+}
+genre_rating_u25_df <- genre_rating_u25_df[order(genre_rating_u25_df$V2),]
+
+# For reviewers age 20 to 40
+genre_rating_25_40_df <- as_data_frame(matrix(NA, nrow = 18, ncol = 2))
+for (i in 11:28){
+  genre_rating_25_40 <- split(is_25_to_40, is_25_to_40[[i]])
+  genremean_rating_25_40 <- mean(genre_rating_25_40$`1`$Rating)
+  genre_rating_25_40_df[i-10, 1] <- colnames(is_25_to_40)[i]
+  genre_rating_25_40_df[i-10, 2] <- genremean_rating_25_40
+}
+genre_rating_25_40_df <- genre_rating_25_40_df[order(genre_rating_25_40_df$V2),]
+
+# For reviewers over 40
+genre_rating_a40_df <- as_data_frame(matrix(NA, nrow = 18, ncol = 2))
+for (i in 11:28){
+  genre_rating_a40 <- split(above_40, above_40[[i]])
+  genremean_rating_a40 <- mean(genre_rating_a40$`1`$Rating)
+  genre_rating_a40_df[i-10, 1] <- colnames(above_40)[i]
+  genre_rating_a40_df[i-10, 2] <- genremean_rating_a40
+}
+genre_rating_a40_df <- genre_rating_a40_df[order(genre_rating_a40_df$V2),]
+
+# Plot
+genre_rating_age <- merge(genre_rating_u20_df, genre_rating_20_40_df, by = 'V1')
+genre_rating_age <- merge(genre_rating_age, genre_rating_a40_df, by = 'V1')
+
+genre_rating_age$V1 <- factor(genre_rating_age$V1, levels = genre_rating_age$V1[order(genre_rating_age$V2.x)])
+plot1 <- ggplot(data = genre_rating_age, aes(x = genre_rating_age$V1)) + 
+  geom_line(aes(y = genre_rating_age$V2.x), group = 1, colour = 'red') + 
+  geom_line(aes(y = genre_rating_age$V2.y), group = 1, colour = 'blue') + 
+  geom_line(aes(y = genre_rating_age$V2), group = 1, colour = 'green')
+
+plot1 <- plot1 + ylab('Average Rating') + xlab('Genre')
+plot1 <- plot1 + annotate("text", x = 4.1, y = 3.18, label = "Adults don't rate Horror movies\n as high as under 25", size = 6)
+plot1 <- plot1 + annotate("text", x = 8.5, y = 3.85, label = "40 and above rate Western and Mystery higher", size = 6)
+plot1
+
+#-----------------------------------------------------------------------------------------
+
+# Find the relationship between gender and ratings
+mean_m_reviewers
+mean_f_reviewers
+# The average rating of each gender is very close to each other, 
+# so no apparent relationship between gender and ratings
+
+# Split the dataframe by gender
+movie_genres_gender <- split(movie_genres_age, movie_genres_age$Gender)
+
+# For male reviewers
+genre_rating_m_df <- as_data_frame(matrix(NA, nrow = 18, ncol = 2))
+for (i in 11:28){
+  genre_rating_m <- split(movie_genres_gender$M, movie_genres_gender$M[[i]])
+  genremean_rating_m <- mean(genre_rating_m$`1`$Rating)
+  genre_rating_m_df[i-10, 1] <- colnames(movie_genres_gender$M)[i]
+  genre_rating_m_df[i-10, 2] <- genremean_rating_m
+}
+genre_rating_m_df <- genre_rating_m_df[order(genre_rating_m_df$V2),]
+
+# For female reviewers
+genre_rating_f_df <- as_data_frame(matrix(NA, nrow = 18, ncol = 2))
+for (i in 11:28){
+  genre_rating_f <- split(movie_genres_gender$F, movie_genres_gender$F[[i]])
+  genremean_rating_f <- mean(genre_rating_f$`1`$Rating)
+  genre_rating_f_df[i-10, 1] <- colnames(movie_genres_gender$F)[i]
+  genre_rating_f_df[i-10, 2] <- genremean_rating_f
+}
+genre_rating_f_df <- genre_rating_f_df[order(genre_rating_f_df$V2),]
+
+# Plot
+genre_rating_gender <- merge(genre_rating_f_df, genre_rating_m_df, by = 'V1')
+genre_rating_gender <- genre_rating_gender[order(genre_rating_gender$V2.x),]
+
+genre_rating_gender$V1 <- factor(genre_rating_gender$V1, levels = genre_rating_gender$V1[order(genre_rating_gender$V2.x)])
+plot2 <- ggplot(data = genre_rating_gender, aes(x = genre_rating_gender$V1)) + 
+  geom_line(aes(y = genre_rating_gender$V2.x), group = 1, colour = 'red') + 
+  geom_line(aes(y = genre_rating_gender$V2.y), group = 1, colour = 'blue')
+
+plot2 <- plot2 + ylab('Average Rating') + xlab('Genre')
+plot2 <- plot2 + annotate("text", x = 8, y = 3.70, label = "Males rate Western movies\n higher than females", size = 6)
+plot2 <- plot2 + annotate("text", x = 14, y = 3.45, label = "Females rate Musicals higher than males", size = 6)
+
+plot2
