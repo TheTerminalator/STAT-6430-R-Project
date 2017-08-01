@@ -294,6 +294,60 @@ lowest_rating_genre_a30
 # Answer: FilmNoir
 #         unknown
 
+#-----------------------------------------------------------------------------------
+# Analysis of average ratings by year of movie release
+
+# Read input files - reviews.txt, reviewers.txt and genres.txt
+moviereviews_df <-read.csv(text=getURL("https://raw.githubusercontent.com/rohanbapat/STAT-6430-R-Project/master/reviews.txt"), header=F, sep ="\t")
+colnames(reviews_df) <- c('ReviewerID','MovieID','Rating','TimeStampUTC')
+
+genres_df <-read.csv(text=getURL("https://raw.githubusercontent.com/rohanbapat/STAT-6430-R-Project/master/genres.txt"), header=F, sep ="|")
+colnames(genres_df) <- c('MovieID', 'movie title', 'release date', 'video release date ', 'IMDb URL',
+                         'unknown', 'Action', 'Adventure', 'Animation ', 'Childrens', 'Comedy', 'Crime',
+                         'Documentary', 'Drama', 'Fantasy ', 'Film-Noir', 'Horror', 'Musical', 'Mystery',
+                         'Romance', 'Sci-Fi ', 'Thriller', 'War', 'Western ')
+
+reviewers_df <- read.csv(text = getURL("https://raw.githubusercontent.com/rohanbapat/STAT-6430-R-Project/master/reviewers.txt"), header = F, sep = "|")
+colnames(reviewers_df) <- c('ReviewerID', 'Age', 'Gender', 'Occupation', 'Zipcode')
+
+# Merge reviewers and reviews
+reviewer_merged_df <- merge(x = reviews_df, y = reviewers_df, by = 'ReviewerID', all.x = T)
+
+# Merge with genres
+genres_merged_df <- merge(x = reviewer_merged_df, y = genres_df, by = 'MovieID', all.x = T)
+
+# Convert movie title to character
+genres_merged_df$`movie title` <- as.character(genres_merged_df$`movie title`)
+
+# Remove year from movie title
+genres_merged_df$`movie title` <- sapply(genres_merged_df$`movie title`, function (x) substr(x,1,nchar(x)-7))
+
+# Import lubridate to parse dates
+library(lubridate)
+genres_merged_df$`release date`<- as.Date(genres_merged_df$`release date`, '%d-%b-%Y')
+
+# Extract year of movie release
+genres_merged_df$release_year <- year(genres_merged_df$`release date`)
+
+# Extract decade of movie release
+genres_merged_df$release_decade <- cut(genres_merged_df$release_year , breaks = c(1920,1950,1960,1970,1980,1990,1995,2000),  include.lowest = T, labels = c("1920-1950","1950-1960","1960-1970","1970-1980","1980-1990","1990-1995","1995-2000"))
+
+# Get mean rating by decade
+rating_by_decade <- genres_merged_df%>%group_by(release_decade)%>%summarise(meanRating = mean(Rating), numMovies = n_distinct(MovieID))
+
+# Remove NAs
+rating_by_decade  <- na.omit(rating_by_decade)
+
+# Round the mean rating
+rating_by_decade$meanRating <- round(rating_by_decade$meanRating,2)
+
+# Create ggplot
+p_decade_rtng <- ggplot(rating_by_decade, aes(x = release_decade, y = meanRating, fill = meanRating )) + geom_bar(stat = "identity") + 
+  scale_fill_gradient2(low='snow', high='dodgerblue4', space='Lab', limits = c(0, 4)) + 
+  # Add titles, xlabels and ylabels
+  labs(title = "Fall in average movie rating by release year", x = "Time of release", y = "Average rating") + 
+  geom_text(aes(label=meanRating), vjust=-0.2)
+p_decade_rtng
 #-----------------------------------------------------------------------------------------
 
 # 2. What groups are most likely to provide higher ratings?
