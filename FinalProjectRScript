@@ -194,13 +194,19 @@ zipcodes_df <- read.csv(text = getURL("https://raw.githubusercontent.com/rohanba
 # Merge reviews_reviewers and zipcodes together
 reviews_reviewers_zipcodes <- merge(reviews_reviewers, zipcodes_df, by = "Zipcode")
 
+# Make NA states as Canada or Unknown
+reviews_reviewers_zipcodes$State <- as.character(reviews_reviewers_zipcodes$State)
+reviews_reviewers_zipcodes$State[grepl("[[:alpha:]]", reviews_reviewers_zipcodes$Zipcode)] <- "Canada"
+reviews_reviewers_zipcodes$State[is.na(reviews_reviewers_zipcodes$State)] <- "Unknown"
+
 # Find the number of reviews for each state, and order them in descending orders
-statecount_summary_df <- data.frame(table(reviews_reviewers_zipcodes$State))
-statecount_summary_df <- statecount_summary_df[order(-statecount_summary_df$Freq),]
+zipcode_grouped_df <-reviews_reviewers_zipcodes%>%group_by(State)%>%summarise(countState = length(State))
+zipcode_grouped_df <- zipcode_grouped_df[order(-zipcode_grouped_df$countState),]
 
 # The states with top 5 most reviews
-statecount_summary_df$Var1[1:5]
-# Answer: CA MN NY IL TX
+zipcode_grouped_df$State[1:5]
+
+# Answer: CA Unknown MN NY IL
 
 #------------------------------------------------------------------------------------------
 
